@@ -4,7 +4,7 @@ var _           = require('highland')
   , program     = require('commander')
   , XLSX        = require('xlsx')
   , request     = require('superagent')
-  , JSONStream  = require('JSONStream')
+  , through2    = require('through2')
   , url;
 
 var exceltoJSONStream = function(file){
@@ -26,13 +26,13 @@ program
 .arguments('<file>')
 .option('-u, --url <http request target>', 'URL to work with.')
 .action(function(file) {
-  var req = request.post(program.url);
-  req.type('json');
-
   exceltoJSONStream(file)
   .map(lowerCasedKeys)
-  .map(JSON.stringify)
-  .pipe(req)
+  .pipe(through2.obj(function(buf, _, next){
+    request.post(program.url).send(buf).end(function(err, res){
+      next(err, JSON.stringify(res));
+    });
+  }))
   .pipe(process.stdout);
 })
 .parse(process.argv);
