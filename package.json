@@ -1,0 +1,31 @@
+{
+  "name": "slingg-cli",
+  "version": "0.1.0",
+  "description": "A utility that performs http requests using rows in an xls/csv file as payloads.",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "cli",
+    "slingg",
+    "http",
+    "xls",
+    "excel",
+    "csv",
+    "http",
+    "requests"
+  ],
+  "author": "Ezo Saleh <npm@ezosaleh.com> (http://ezosaleh.com/)",
+  "license": "MIT",
+  "preferGlobal": true,
+  "bin": {
+    "slingg": "index.js"
+  },
+  "dependencies": {
+    "commander": "^2.9.0",
+    "highland": "^2.6.0",
+    "superagent": "^1.7.2",
+    "xlsx": "^0.8.0"
+  }
+}
