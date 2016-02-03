@@ -35,7 +35,7 @@ var mapColumns = function(row){
 function parseMapCols(val){
   var result = {};
   var val = val.replace(/\s|\"|\{|\}/g, '');
-  val.split(',').map(_.trim).forEach(function(e){
+  val.split(',').forEach(function(e){
     var parts = e.split(':');
     result[parts[0]] = parts[1] === 'null' ? null : parts[1];
   });
