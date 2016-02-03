@@ -23,8 +23,10 @@ var lowerCasedKeys = function(row){
 };
 
 program
+.usage('[options] <file>')
 .arguments('<file>')
 .option('-u, --url <http request target>', 'URL to work with.')
+.option('-m, --mapping [override1:original1, ...]', 'Optional column mappings to override originals in xls/csv.')
 .action(function(file) {
   exceltoJSONStream(file)
   .map(lowerCasedKeys)
