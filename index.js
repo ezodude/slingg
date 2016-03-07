@@ -1,12 +1,12 @@
 #! /usr/bin/env node
 
 var h           = require('highland')
-  , _      = require('lodash')
+  , _           = require('lodash')
   , program     = require('commander')
   , XLSX        = require('xlsx')
   , request     = require('superagent')
   , through2    = require('through2')
-  , mapping;
+  , mappedColumns;
 
 var exceltoJSONStream = function(file){
   var workbook = XLSX.readFile(file);
@@ -16,25 +16,26 @@ var exceltoJSONStream = function(file){
 };
 
 var lowerCasedKeys = function(row){
-  h.keys(row).each(function(key){
-    row[key.toLowerCase()] = row[key];
-    delete row[key];
-  });
-  return row;
+  const result = {};
+  _.keys(row).forEach(key => result[key.toLowerCase()] = row[key]);
+  return result;
 };
 
 var mapColumns = function(row){
-  var invertedMapping = _.invert(mapping);
-  h.values(mapping).each(function(val){
-    row[invertedMapping[val]] = row[val];
-    delete row[val];
+  const result = _.assign({}, row);
+  const inverted = _.invert(mappedColumns);
+
+  _.values(mappedColumns).forEach( val => {
+    result[inverted[val]] = row[val];
+    delete result[val]
   });
-  return row;
+
+  return result;
 };
 
 function parseMapCols(val){
   var result = {};
-  var val = val.replace(/\s|\"|\{|\}/g, '');
+  var val = val.replace(/\s|\"|\{|\}|\[|\]/g, '');
   val.split(',').forEach(function(e){
     var parts = e.split(':');
     result[parts[0]] = parts[1] === 'null' ? null : parts[1];
@@ -46,16 +47,21 @@ program
 .usage('[options] <file>')
 .arguments('<file>')
 .option('-u, --url <http request target>', 'URL to work with.')
-.option('-c, --map-cols [override1:original1, ...]', 'Optional column headers to override originals in xls/csv.', parseMapCols)
+.option('-c, --mapcols [override1:original1, ...]', 'Optional column headers to override originals in xls/csv.', parseMapCols)
 .action(function(file) {
-  mapping = program.mapping;
+  mappedColumns = program.mapcols;
 
   exceltoJSONStream(file)
   .map(lowerCasedKeys)
   .map(mapColumns)
   .map(JSON.stringify)
-  .pipe(through2.obj(function(buf, h, next){
-    request.post(program.url).send(buf).end(function(err, res){
+  .pipe(through2.obj(function(payload, h, next){
+    request
+    .post(program.url)
+    .send(payload)
+    .set('Accept', 'application/json')
+    .set('Content-Type', 'application/json')
+    .end(function(err, res){
       next(err, JSON.stringify(res));
     });
   }))
