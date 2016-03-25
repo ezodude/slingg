@@ -20,7 +20,7 @@
   "license": "MIT",
   "preferGlobal": true,
   "bin": {
-    "slingg": "index.js"
+    "slingg": "bin/cmd.js"
   },
   "dependencies": {
     "commander": "^2.9.0",
