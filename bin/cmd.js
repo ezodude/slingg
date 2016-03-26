@@ -1,39 +1,11 @@
 #! /usr/bin/env node
 
-var h           = require('highland')
-  , _           = require('lodash')
-  , program     = require('commander')
-  , XLSX        = require('xlsx')
-  , request     = require('superagent')
-  , through2    = require('through2')
-  , mappedColumns;
+'use strict';
 
-var exceltoJSONStream = function(file){
-  var workbook = XLSX.readFile(file);
-  var ws = workbook.Sheets[workbook.SheetNames[0]];
-  var json = XLSX.utils.sheet_to_json(ws);
-  return h(json);
-};
+const program     = require('commander')
+    , slingg = require('../');
 
-var lowerCasedKeys = function(row){
-  const result = {};
-  _.keys(row).forEach(key => result[key.toLowerCase()] = row[key]);
-  return result;
-};
-
-var mapColumns = function(row){
-  const result = _.assign({}, row);
-  const inverted = _.invert(mappedColumns);
-
-  _.values(mappedColumns).forEach( val => {
-    result[inverted[val]] = row[val];
-    delete result[val]
-  });
-
-  return result;
-};
-
-function parseMapCols(val){
+function parseOverrideCols(val){
   var result = {};
   var val = val.replace(/\s|\"|\{|\}|\[|\]/g, '');
   val.split(',').forEach(function(e){
@@ -43,28 +15,27 @@ function parseMapCols(val){
   return result;
 }
 
+function parseIgnoreCols(val){
+  var result = {};
+  var val = val.replace(/\s|\"|\{|\}|\[|\]/g, '');
+  return val.split(',');
+}
+
 program
 .usage('[options] <file>')
 .arguments('<file>')
 .option('-u, --url <http request target>', 'URL to work with.')
-.option('-c, --mapcols [override1:original1, ...]', 'Optional column headers to override originals in xls/csv.', parseMapCols)
+.option('-h, --override [override1:original1, ...]', 'Optional, headers to override originals in xls/csv.', parseOverrideCols)
+.option('-i, --ignore [ignore1, ignore2, ...]', 'Optional, headers to ignore from xls/csv.', parseIgnoreCols)
 .action(function(file) {
-  mappedColumns = program.mapcols;
-
-  exceltoJSONStream(file)
-  .map(lowerCasedKeys)
-  .map(mapColumns)
-  .map(JSON.stringify)
-  .pipe(through2.obj(function(payload, h, next){
-    request
-    .post(program.url)
-    .send(payload)
-    .set('Accept', 'application/json')
-    .set('Content-Type', 'application/json')
-    .end(function(err, res){
-      next(err, JSON.stringify(res));
-    });
-  }))
-  .pipe(process.stdout);
+  const opts = {
+    url: program.url,
+    headers: {
+      override: program.override,
+      ignore: program.ignore
+    }
+  };
+  const sl = slingg.fromPath(file, opts);
+  sl.start().pipe(process.stdout);
 })
 .parse(process.argv);
