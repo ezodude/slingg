@@ -75,7 +75,6 @@ Slingg.prototype.start = function () {
     .map(lowerCasedKeys)
     .map((row) => { return this.hasOverrideHeaders() ? override(this.headers.override, row) : row; })
     .map((row) => { return this.hasIgnoreHeaders() ? ignore(this.headers.ignore, row) : row; })
-    .doto(console.log)
     .map(JSON.stringify)
     .pipe(through2.obj((payload, _, next) => {
       request
