@@ -1,31 +1,28 @@
-#! /usr/bin/env node
+'use strict';
 
-var h           = require('highland')
-  , _           = require('lodash')
-  , program     = require('commander')
-  , XLSX        = require('xlsx')
-  , request     = require('superagent')
-  , through2    = require('through2')
-  , mappedColumns;
+const h           = require('highland')
+    , _           = require('lodash')
+    , XLSX        = require('xlsx')
+    , request     = require('superagent')
+    , through2    = require('through2');
 
-var exceltoJSONStream = function(file){
-  var workbook = XLSX.readFile(file);
-  var ws = workbook.Sheets[workbook.SheetNames[0]];
-  var json = XLSX.utils.sheet_to_json(ws);
+const workbookToStream = (workbook, opts) => {
+  const ws = workbook.Sheets[workbook.SheetNames[0]];
+  const json = XLSX.utils.sheet_to_json(ws);
   return h(json);
 };
 
-var lowerCasedKeys = function(row){
+const lowerCasedKeys = (row) => {
   const result = {};
   _.keys(row).forEach(key => result[key.toLowerCase()] = row[key]);
   return result;
 };
 
-var mapColumns = function(row){
+const override = (overriden, row) => {
   const result = _.assign({}, row);
-  const inverted = _.invert(mappedColumns);
+  const inverted = _.invert(overriden);
 
-  _.values(mappedColumns).forEach( val => {
+  _.values(overriden).forEach( val => {
     result[inverted[val]] = row[val];
     delete result[val]
   });
@@ -33,38 +30,77 @@ var mapColumns = function(row){
   return result;
 };
 
-function parseMapCols(val){
-  var result = {};
-  var val = val.replace(/\s|\"|\{|\}|\[|\]/g, '');
-  val.split(',').forEach(function(e){
-    var parts = e.split(':');
-    result[parts[0]] = parts[1] === 'null' ? null : parts[1];
-  });
+const ignore = (ignored, row) => {
+  const result = _.assign({}, row);
+  ignored.forEach( i => { delete result[i] });
   return result;
+};
+
+function Slingg(opts) {
+  if (!(this instanceof Slingg)) return new Slingg(opts);
+
+  opts || (opts = {});
+  if(!opts.url){ throw new Error('Destination url is missing!'); }
+
+  this.url = opts.url;
+  this.headers = opts.headers;
 }
 
-program
-.usage('[options] <file>')
-.arguments('<file>')
-.option('-u, --url <http request target>', 'URL to work with.')
-.option('-c, --mapcols [override1:original1, ...]', 'Optional column headers to override originals in xls/csv.', parseMapCols)
-.action(function(file) {
-  mappedColumns = program.mapcols;
+Slingg.prototype.hasOverrideHeaders = function () {
+  return this.headers && this.headers.override;
+};
 
-  exceltoJSONStream(file)
-  .map(lowerCasedKeys)
-  .map(mapColumns)
-  .map(JSON.stringify)
-  .pipe(through2.obj(function(payload, h, next){
-    request
-    .post(program.url)
-    .send(payload)
-    .set('Accept', 'application/json')
-    .set('Content-Type', 'application/json')
-    .end(function(err, res){
-      next(err, JSON.stringify(res));
-    });
-  }))
-  .pipe(process.stdout);
-})
-.parse(process.argv);
+Slingg.prototype.hasIgnoreHeaders = function () {
+  return this.headers && this.headers.ignore;
+};
+
+Slingg.prototype.extractWorkbookFromPath = function (filePath) {
+  this.workbook = XLSX.readFile(filePath);
+  return this;
+};
+
+Slingg.prototype.extractWorkbookFromBuffer = function (buffer) {
+  this.workbook = XLSX.read(buffer);
+  return this;
+};
+
+Slingg.prototype.createBaseStream = function () {
+  const ws = this.workbook.Sheets[this.workbook.SheetNames[0]];
+  this.baseStream = h(XLSX.utils.sheet_to_json(ws));
+  return this;
+};
+
+Slingg.prototype.start = function () {
+  return this.baseStream
+    .map(lowerCasedKeys)
+    .map((row) => { return this.hasOverrideHeaders() ? override(this.headers.override, row) : row; })
+    .map((row) => { return this.hasIgnoreHeaders() ? ignore(this.headers.ignore, row) : row; })
+    .doto(console.log)
+    .map(JSON.stringify)
+    .pipe(through2.obj((payload, _, next) => {
+      request
+      .post(this.url)
+      .send(payload)
+      .set('Accept', 'application/json')
+      .set('Content-Type', 'application/json')
+      .end(function(err, res){
+        next(err, JSON.stringify(res));
+      });
+    }));
+};
+
+Slingg.fromPath = (filePath, opts) => {
+  const obj = new Slingg(opts);
+  return obj
+  .extractWorkbookFromPath(filePath)
+  .createBaseStream();
+};
+
+Slingg.fromBuffer = (buffer, opts) => {
+  const obj = new Slingg(opts);
+  return obj
+  .extractWorkbookFromBuffer(buffer)
+  .createBaseStream();
+};
+
+module.exports = Slingg;
