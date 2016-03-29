@@ -95,11 +95,4 @@ Slingg.fromPath = (filePath, opts) => {
   .createBaseStream();
 };
 
-Slingg.fromBuffer = (buffer, opts) => {
-  const obj = new Slingg(opts);
-  return obj
-  .extractWorkbookFromBuffer(buffer)
-  .createBaseStream();
-};
-
 module.exports = Slingg;
