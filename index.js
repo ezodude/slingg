@@ -1,11 +1,24 @@
 'use strict';
 
-const h           = require('highland')
+const _           = require('lodash')
+    ,  h          = require('highland')
     , XLSX        = require('xlsx')
     , request     = require('superagent')
     , through2    = require('through2')
-    , transforms  = require('./lib/transforms');
+    , transforms  = require('./lib/transforms')
+    , xlsFiles    = require('./lib/xlsFiles');
 
+const xlsPaths = h.wrapCallback(xlsFiles);
+
+function Workbook(path){
+  this.path = path;
+  this.source = XLSX.readFile(this.path);
+  this.sheet = this.source.Sheets[this.source.SheetNames[0]];
+};
+
+Workbook.prototype.toJSON = function () {
+  return XLSX.utils.sheet_to_json(this.sheet);
+};
 
 function Slingg(opts) {
   if (!(this instanceof Slingg)) return new Slingg(opts);
@@ -25,14 +38,21 @@ Slingg.prototype.hasIgnoreHeaders = function () {
   return this.headers && this.headers.ignore;
 };
 
-Slingg.prototype.extractWorkbookFromPath = function (filePath) {
-  this.workbook = XLSX.readFile(filePath);
+Slingg.prototype.mineXls = function (path) {
+  this.allXls = xlsPaths(path);
   return this;
-};
+}
 
-Slingg.prototype.createBaseStream = function () {
-  const ws = this.workbook.Sheets[this.workbook.SheetNames[0]];
-  this.baseStream = h(XLSX.utils.sheet_to_json(ws));
+Slingg.prototype.aggregateWorkbooks = function () {
+  this.baseStream =
+    this.allXls
+    .fork()
+    .flatten()
+    .doto(console.log)
+    .map(xlsFile => new Workbook(xlsFile))
+    .map(workbook => workbook.toJSON())
+    .series();
+
   return this;
 };
 
@@ -58,11 +78,11 @@ Slingg.prototype._prepBase = function () {
     .map(JSON.stringify);
 };
 
-Slingg.fromPath = (filePath, opts) => {
+Slingg.fromPath = (path, opts) => {
   const obj = new Slingg(opts);
-  return obj
-  .extractWorkbookFromPath(filePath)
-  .createBaseStream();
+  obj.mineXls(path);
+  obj.aggregateWorkbooks();
+  return obj;
 };
 
 module.exports = Slingg;
