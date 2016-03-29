@@ -22,8 +22,8 @@ function parseIgnoreCols(val){
 }
 
 program
-.usage('[options] <file>')
-.arguments('<file>')
+.usage('[options] <file|directory>')
+.arguments('<file|directory>')
 .option('-u, --url <http request target>', 'URL to work with.')
 .option('-h, --override [override1:original1, ...]', 'Optional, headers to override originals in xls/csv.', parseOverrideCols)
 .option('-i, --ignore [ignore1, ignore2, ...]', 'Optional, headers to ignore from xls/csv.', parseIgnoreCols)
