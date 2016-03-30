@@ -36,6 +36,6 @@ program
     }
   };
   const sl = slingg.fromPath(file, opts);
-  sl.start().pipe(process.stdout);
+  sl.stream().pipe(process.stdout);
 })
 .parse(process.argv);

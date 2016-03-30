@@ -56,7 +56,7 @@ Slingg.prototype.aggregateWorkbooks = function () {
   return this;
 };
 
-Slingg.prototype.start = function () {;
+Slingg.prototype.stream = function () {;
   return this._prepBase()
     .pipe(through2.obj((payload, _, next) => {
       request
