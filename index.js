@@ -9,6 +9,7 @@ const _           = require('lodash')
     , xlsFiles    = require('./lib/xlsFiles');
 
 const xlsPaths = h.wrapCallback(xlsFiles);
+const RATE_LIMIT_IN_MS = 100;
 
 function Workbook(path){
   this.path = path;
@@ -58,6 +59,7 @@ Slingg.prototype.aggregateWorkbooks = function () {
 
 Slingg.prototype.stream = function () {;
   return this._prepBase()
+    .ratelimit(1, RATE_LIMIT_IN_MS)
     .pipe(through2.obj((payload, _, next) => {
       request
       .post(this.url)
