@@ -31,6 +31,7 @@ function parseTransforms(val, memo){
 }
 
 program
+.description('Slingg performs http requests using rows in an .XLSX file as payloads.')
 .usage('[options] <file|directory>')
 .arguments('<file|directory>')
 .option('-u, --url <http request target>', 'URL to work with.')
@@ -50,3 +51,5 @@ program
   sl.stream().pipe(process.stdout);
 })
 .parse(process.argv);
+
+if (!program.args.length) program.help();

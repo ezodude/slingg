@@ -1,7 +1,7 @@
 {
   "name": "slingg-cli",
   "version": "0.1.0",
-  "description": "A utility that performs http requests using rows in an xls/csv file as payloads.",
+  "description": "A utility that performs http requests using rows in an xls file as payloads.",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
