@@ -78,8 +78,7 @@ Slingg.prototype._prepBase = function () {
     .doto( row => transforms.dynamic(this.headers.coercions, row) )
     .map((row) => { return this.hasOverrideHeaders() ? transforms.override(this.headers.override, row) : row; })
     .map((row) => { return this.hasIgnoreHeaders() ? transforms.ignore(this.headers.ignore, row) : row; })
-    .map(JSON.stringify)
-    .doto(console.log);
+    .map(JSON.stringify);
 };
 
 Slingg.fromPath = (path, opts) => {
