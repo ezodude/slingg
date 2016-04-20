@@ -35,16 +35,16 @@ program
 .usage('[options] <file|directory>')
 .arguments('<file|directory>')
 .option('-u, --url <http request target>', 'URL to work with.')
-.option('-h, --override [override1:original1, ...]', 'Optional, headers to override originals in xls/csv.', parseOverrideCols)
-.option('-i, --ignore [ignore1, ignore2, ...]', 'Optional, headers to ignore from xls/csv.', parseIgnoreCols)
-.option('-t, --transforms header:"<js code>"', 'Optional, JS transform to coerce data using eval.', parseTransforms, {})
+.option('-h, --override [override1:original1, ...]', 'Optional, headers to override originals in xlsx.', parseOverrideCols)
+.option('-i, --ignore [ignore1, ignore2, ...]', 'Optional, headers to ignore from xlsx.', parseIgnoreCols)
+.option('-t, --transforms header:"<js code>"', 'Optional, JS transform to coerce header values using eval.', parseTransforms, {})
 .action(function(file) {
   const opts = {
     url: program.url,
     headers: {
       override: program.override,
       ignore: program.ignore,
-      evalTransforms: program.transforms
+      coercions: program.transforms
     }
   };
   const sl = slingg.fromPath(file, opts);

@@ -28,7 +28,7 @@ function Slingg(opts) {
   if(!opts.url){ throw new Error('Destination url is missing!'); }
 
   this.url = opts.url;
-  this.headers = opts.headers;
+  this.headers = opts.headers || {};
 }
 
 Slingg.prototype.hasOverrideHeaders = function () {
@@ -75,9 +75,11 @@ Slingg.prototype.stream = function () {;
 Slingg.prototype._prepBase = function () {
   return this.baseStream
     .map(transforms.lowerCasedKeys)
+    .doto( row => transforms.dynamic(this.headers.coercions, row) )
     .map((row) => { return this.hasOverrideHeaders() ? transforms.override(this.headers.override, row) : row; })
     .map((row) => { return this.hasIgnoreHeaders() ? transforms.ignore(this.headers.ignore, row) : row; })
-    .map(JSON.stringify);
+    .map(JSON.stringify)
+    .doto(console.log);
 };
 
 Slingg.fromPath = (path, opts) => {
