@@ -2,8 +2,8 @@
 
 'use strict';
 
-const program     = require('commander')
-    , slingg = require('../');
+const program = require('commander')
+    , slingg  = require('../');
 
 function parseOverrideCols(val){
   var result = {};
@@ -21,18 +21,29 @@ function parseIgnoreCols(val){
   return val.split(',');
 }
 
+function parseTransforms(val, memo){
+  const clean = val.replace(/\"/g, '');
+  clean.split(',').forEach(function(e){
+    const parts = e.split(':');
+    memo[parts[0].trim()] = parts[1] === 'null' ? null : parts[1].trim();
+  });
+  return memo;
+}
+
 program
 .usage('[options] <file|directory>')
 .arguments('<file|directory>')
 .option('-u, --url <http request target>', 'URL to work with.')
 .option('-h, --override [override1:original1, ...]', 'Optional, headers to override originals in xls/csv.', parseOverrideCols)
 .option('-i, --ignore [ignore1, ignore2, ...]', 'Optional, headers to ignore from xls/csv.', parseIgnoreCols)
+.option('-t, --transforms header:"<js code>"', 'Optional, JS transform to coerce data using eval.', parseTransforms, {})
 .action(function(file) {
   const opts = {
     url: program.url,
     headers: {
       override: program.override,
-      ignore: program.ignore
+      ignore: program.ignore,
+      evalTransforms: program.transforms
     }
   };
   const sl = slingg.fromPath(file, opts);
