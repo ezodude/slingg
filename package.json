@@ -1,18 +1,16 @@
 {
-  "name": "slingg-cli",
+  "name": "slingg",
   "version": "0.1.0",
-  "description": "A utility that performs http requests using rows in an xls file as payloads.",
+  "description": "Post rows in an xls/xlsx file as payloads.",
   "main": "index.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [
-    "cli",
     "slingg",
     "http",
     "xls",
     "excel",
-    "csv",
     "http",
     "requests"
   ],
