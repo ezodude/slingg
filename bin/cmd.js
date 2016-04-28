@@ -38,6 +38,7 @@ program
 .option('-h, --override [override1:original1, ...]', 'Optional, headers to override originals in xlsx.', parseOverrideCols)
 .option('-i, --ignore [ignore1, ignore2, ...]', 'Optional, headers to ignore from xlsx.', parseIgnoreCols)
 .option('-t, --transforms header:"<js code>"', 'Optional, JS transform to coerce header values using eval.', parseTransforms, {})
+.option('-v, --verbose', 'Optional, verbose mode.')
 .action(function(file) {
   const opts = {
     url: program.url,
@@ -47,8 +48,13 @@ program
       coercions: program.transforms
     }
   };
+  console.log('slingg starting.');
   const sl = slingg.fromPath(file, opts);
-  sl.stream().pipe(process.stdout);
+  sl.stream()
+  .each(res => {
+    if (program.verbose) { console.log(JSON.stringify(res.body)); }
+  })
+  .done(_ => console.log('slingg completed.'));
 })
 .parse(process.argv);
 
