@@ -4,7 +4,6 @@ const _           = require('lodash')
     ,  h          = require('highland')
     , XLSX        = require('xlsx')
     , request     = require('superagent')
-    , through2    = require('through2')
     , transforms  = require('./lib/transforms')
     , xlsFiles    = require('./lib/xlsFiles');
 
@@ -58,18 +57,17 @@ Slingg.prototype.aggregateWorkbooks = function () {
 };
 
 Slingg.prototype.stream = function () {;
-  return this._prepBase()
-    .ratelimit(1, RATE_LIMIT_IN_MS)
-    .pipe(through2.obj((payload, _, next) => {
-      request
+  const requestWrapper = (payload, cb) => {
+    request
       .post(this.url)
       .send(payload)
-      .set('Accept', 'application/json')
-      .set('Content-Type', 'application/json')
-      .end(function(err, res){
-        next(err, JSON.stringify(res));
-      });
-    }));
+      .set({'Accept': 'application/json', 'Content-Type': 'application/json'})
+      .end(cb);
+  };
+  return this._prepBase()
+    .ratelimit(1, RATE_LIMIT_IN_MS)
+    .flatMap(h.wrapCallback(requestWrapper))
+    .stopOnError(e => console.log('ERROR:', e));
 };
 
 Slingg.prototype._prepBase = function () {
